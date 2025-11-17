@@ -411,7 +411,7 @@ class User(models.Model):
 
     username = models.CharField(max_length=20)
     email = models.CharField(max_length=50)
-    password = models.CharField(max_length=22)
+    password = models.CharField(max_length=255)
     tos_accept = models.BooleanField(default=False)
     level = models.IntegerField(default=1)
     level_name = models.CharField(max_length=15, default="Newbie")

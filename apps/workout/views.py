@@ -4,73 +4,47 @@ from .models import User, Workout, Exercise
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def login(request):
-    """If GET, load login page, if POST, login user."""
-
     if request.method == "GET":
         return render(request, "workout/index.html")
 
     if request.method == "POST":
-        # Validate login data:
         validated = User.objects.login(**request.POST)
-        try:
-            # If errors, reload login page with errors:
-            if len(validated["errors"]) > 0:
-                print("User could not be logged in.")
-                # Loop through errors and Generate Django Message for each with custom level and tag:
-                for error in validated["errors"]:
-                    messages.error(request, error, extra_tags='login')
-                # Reload login page:
-                return redirect("/")
-        except KeyError:
-            # If validation successful, set session, and load dashboard based on user level:
-            print("User passed validation and is logged in.")
 
-            # Set session to validated User:
-            request.session["user_id"] = validated["logged_in_user"].id
+        # If errors exist
+        if "errors" in validated:
+            for error in validated["errors"]:
+                messages.error(request, error, extra_tags='login')
+            return redirect("/")
 
-            # Fetch dashboard data and load appropriate dashboard page:
-            return redirect("/dashboard")
+        # SUCCESS
+        user = validated["logged_in_user"]
+        request.session["user_id"] = user.id
+        return redirect("/dashboard")
 
 def register(request):
-    """If GET, load registration page; if POST, register user."""
-
     if request.method == "GET":
         return render(request, "workout/register.html")
 
     if request.method == "POST":
-        # Validate registration data:
         validated = User.objects.register(**request.POST)
-        # If errors, reload register page with errors:
-        try:
-            if len(validated["errors"]) > 0:
-                print("User could not be registered.")
-                # Loop through errors and Generate Django Message for each with custom level and tag:
-                for error in validated["errors"]:
-                    messages.error(request, error, extra_tags='registration')
-                # Reload register page:
-                return redirect("/user/register")
-        except KeyError:
-            # If validation successful, set session and load dashboard based on user level:
-            print("User passed validation and has been created.")
-            # Set session to validated User:
-            request.session["user_id"] = validated["logged_in_user"].id
-            # Load Dashboard:
-            return redirect('/dashboard')
+
+        if "errors" in validated:
+            for error in validated["errors"]:
+                messages.error(request, error, extra_tags='registration')
+            return redirect("/user/register")
+
+        # SUCCESS
+        user = validated["logged_in_user"]
+        request.session["user_id"] = user.id
+        return redirect("/dashboard")
 
 def logout(request):
-    """Logs out current user."""
-
-    try:
-        # Deletes session:
+    if "user_id" in request.session:
         del request.session['user_id']
-        # Adds success message:
         messages.success(request, "You have been logged out.", extra_tags='logout')
 
-    except KeyError:
-        pass
-
-    # Return to index page:
     return redirect("/")
+
 
 def dashboard(request):
     """Loads dashboard."""
@@ -212,7 +186,7 @@ def exercise(request, id):
             # Delete exercise by exercise id (from hidden field):
             Exercise.objects.get(id=request.GET["exercise_id"]).delete()
 
-            return redirect("/workout/" + id)
+            return redirect(f'/workout/{id}')
 
         if request.method == "POST":
 
@@ -238,13 +212,13 @@ def exercise(request, id):
                         messages.error(request, error, extra_tags='exercise')
 
                     # Reload workout page:
-                    return redirect("/workout/" + id)
+                    return redirect(f'/workout/{id}')
             except KeyError:
                 # If validation successful, load newly created workout page:
                 print("Exercise passed validation and has been created.")
 
                 # Reload workout:
-                return redirect('/workout/' + id)
+                return redirect(f'/workout/{id}')
 
     except (KeyError, User.DoesNotExist) as err:
         # If existing session not found:
