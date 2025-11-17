@@ -113,3 +113,4 @@ There is a bug where if the password is too long, the salted conversion can go b
 #### Change Log
 
 - 12/07/17 - Changed view all workouts page to a table.
+
